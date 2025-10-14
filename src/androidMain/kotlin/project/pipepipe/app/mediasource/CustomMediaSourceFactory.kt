@@ -79,9 +79,16 @@ class CustomMediaSourceFactory() : MediaSource.Factory {
         }
 
         val baseHttpFactory = DefaultHttpDataSource.Factory()
-            .setDefaultRequestProperties(requestHeaders)
-            .setConnectTimeoutMs(30_000)
-            .setReadTimeoutMs(30_000)
+    .setDefaultRequestProperties(requestHeaders)
+    .setConnectTimeoutMs(15_000) // faster connect
+    .setReadTimeoutMs(15_000) // faster read
+    .setAllowCrossProtocolRedirects(true)
+    .setTransferListener(object : TransferListener {
+        override fun onTransferInitializing(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {}
+        override fun onTransferStart(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {}
+        override fun onBytesTransferred(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean, bytesTransferred: Int) {}
+        override fun onTransferEnd(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {}
+    })
 
         val upstreamFactory = ResolvingDataSource.Factory(baseHttpFactory) { dataSpec ->
             val filtered = dataSpec.httpRequestHeaders.filterKeys {
