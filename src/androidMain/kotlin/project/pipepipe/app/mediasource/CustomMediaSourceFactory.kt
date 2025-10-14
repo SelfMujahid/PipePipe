@@ -125,8 +125,15 @@ class CustomMediaSourceFactory() : MediaSource.Factory {
                 val hlsMediaItem = mediaItem.copyWithStreamInfo(hlsUrl.toUri(), MimeTypes.APPLICATION_M3U8)
                 hlsMediaSourceFactory.createMediaSource(hlsMediaItem)
             }
-            else -> error("Either dashManifest, dashUrl, or hlsUrl must be provided")
-        }
+            else -> {
+    // Fallback for direct media URLs (MP4, WebM, etc.)
+    val progressiveMediaSourceFactory = ProgressiveMediaSource.Factory(dataSourceFactory)
+    val progressiveMediaItem = mediaItem.copyWithStreamInfo(
+        mediaItem.localConfiguration?.uri ?: Uri.EMPTY,
+        MimeTypes.BASE_TYPE_VIDEO
+    )
+    progressiveMediaSourceFactory.createMediaSource(progressiveMediaItem)
+            }
     }
 
     private fun MediaItem.copyWithStreamInfo(uri: Uri, mimeType: String): MediaItem {
