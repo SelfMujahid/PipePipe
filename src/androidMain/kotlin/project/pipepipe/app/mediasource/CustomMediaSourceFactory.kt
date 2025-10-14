@@ -100,6 +100,8 @@ class CustomMediaSourceFactory() : MediaSource.Factory {
         val useCache = mediaItem.mediaMetadata.extras?.getBoolean("KEY_USE_CACHE", true) ?: true
 
         val dataSourceFactory: DataSource.Factory = if (useCache) {
+            // Optimize cache for smoother playback and less memory usage
+SimpleCache.release() // release old cache if any
             CacheDataSource.Factory()
                 .setCache(MediaCacheProvider.get())
                 .setUpstreamDataSourceFactory(upstreamFactory)
