@@ -18,6 +18,12 @@ dependencyResolutionManagement {
 
 rootProject.name = "PipePipe"
 
-// Dummy includeBuild so Gradle won't fail if shared/extractor missing real code
-includeBuild("shared")
-includeBuild("extractor")
+// include the app module
+include(":app")
+
+// include builds that exist in this repository as folders (match your submodule folder names)
+//
+// If your repository contains submodule folders named PipePipeExtractor and PipePipeClient,
+// include them as local builds so Gradle uses their code instead of looking on Maven.
+includeBuild("PipePipeExtractor")
+includeBuild("PipePipeClient")
