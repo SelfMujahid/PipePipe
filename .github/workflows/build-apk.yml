@@ -10,13 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code (with submodules)
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           submodules: true
-          fetch-depth: 0
 
-      - name: Setup Java (Temurin 24)
+      - name: Init Submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -32,4 +36,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: PipePipe/build/outputs/apk/debug/*.apk
