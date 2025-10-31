@@ -17,6 +17,9 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "PipePipe"
+include(":app")
+includeBuild("shared")
+includeBuild("extractor")
 
 // include only app module present in this repo
 include(":app")
