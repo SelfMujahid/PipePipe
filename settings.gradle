@@ -24,7 +24,9 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = 'client'
+// Project name
+rootProject.name = 'PipePipe'
 
-includeBuild '../shared'
-includeBuild '../extractor'
+// Include only modules that exist inside this repo.
+// If you later add submodules (shared/extractor) into this repo, you can include them here.
+include(":app")
