@@ -18,12 +18,9 @@ dependencyResolutionManagement {
 
 rootProject.name = "PipePipe"
 
-// include the app module
+// include only app module present in this repo
 include(":app")
 
-// include builds that exist in this repository as folders (match your submodule folder names)
-//
-// If your repository contains submodule folders named PipePipeExtractor and PipePipeClient,
-// include them as local builds so Gradle uses their code instead of looking on Maven.
-includeBuild("PipePipeExtractor")
-includeBuild("PipePipeClient")
+// remove includeBuild for external modules that are not present on this repo root
+// If you later add PipePipeExtractor / PipePipeClient folders (as submodules or uploads),
+// you can re-add includeBuild("PipePipeExtractor") and includeBuild("PipePipeClient")
