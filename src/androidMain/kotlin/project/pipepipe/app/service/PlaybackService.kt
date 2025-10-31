@@ -5,6 +5,7 @@ package project.pipepipe.app.service
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
+import android.media.audiofx.LoudnessEnhancer
 import androidx.annotation.OptIn
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
@@ -38,6 +39,9 @@ class PlaybackService : MediaLibraryService() {
 
     private lateinit var sessionCallbackExecutor: ExecutorService
     private var playbackButtonState = PlaybackButtonState.ALL_OFF
+
+    // Keep a reference to the LoudnessEnhancer so it isn't GC'd and so we can release it onDestroy
+    private var loudnessEnhancer: LoudnessEnhancer? = null
 
     private enum class PlaybackButtonState(
         val repeatMode: Int,
@@ -139,6 +143,9 @@ class PlaybackService : MediaLibraryService() {
                 shuffleModeEnabled = false
                 addListener(createPlayerListener())
             }
+
+        // --- Volume boost (LoudnessEnhancer + player.volume up to 2.0f) ---
+        enableVolumeBoostFor(actualPlayer)
 
         player = object : ForwardingPlayer(actualPlayer) {
             override fun getAvailableCommands(): Player.Commands {
@@ -245,6 +252,57 @@ class PlaybackService : MediaLibraryService() {
         applyPlaybackMode(playbackMode.value)
     }
 
+    /**
+     * Safely enable LoudnessEnhancer and set ExoPlayer volume up to 2.0f (200%).
+     * Keeps a reference to the enhancer so it isn't GC'd and releases it in onDestroy.
+     */
+    private fun enableVolumeBoostFor(exo: ExoPlayer) {
+        try {
+            // release any previous enhancer
+            loudnessEnhancer?.release()
+            loudnessEnhancer = null
+
+            val sessionId = exo.audioSessionId
+            if (sessionId != C.AUDIO_SESSION_ID_UNSET) {
+                try {
+                    val enhancer = LoudnessEnhancer(sessionId)
+                    enhancer.setTargetGain(2000) // +20 dB ≈ ~200% loudness
+                    enhancer.enabled = true
+                    loudnessEnhancer = enhancer
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            } else {
+                // If audioSessionId not ready yet, wait for it via listener
+                exo.addListener(object : Player.Listener {
+                    override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                        try {
+                            if (audioSessionId != C.AUDIO_SESSION_ID_UNSET) {
+                                try {
+                                    val enhancer = LoudnessEnhancer(audioSessionId)
+                                    enhancer.setTargetGain(2000)
+                                    enhancer.enabled = true
+                                    loudnessEnhancer = enhancer
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                                // remove this listener after applied
+                                exo.removeListener(this)
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                })
+            }
+
+            // Also set internal ExoPlayer volume to 2.0f (ExoPlayer accepts >1.0 but actual output depends on device)
+            exo.volume = 2.0f
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun getRepeatModeDisplayName(): String {
         return playbackButtonState.displayName
     }
@@ -262,6 +320,13 @@ class PlaybackService : MediaLibraryService() {
     override fun onDestroy() {
         saveCurrentProgress()
         super.onDestroy()
+        // release loudness enhancer if any
+        try {
+            loudnessEnhancer?.release()
+            loudnessEnhancer = null
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         session?.release()
         player.release()
         sessionCallbackExecutor.shutdownNow()
