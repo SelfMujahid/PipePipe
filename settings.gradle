@@ -1,22 +1,14 @@
-// 在 Groovy DSL 中，为了使用 RepositoriesMode 枚举，最好先导入它
 import org.gradle.api.initialization.resolve.RepositoriesMode
 
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex 'com\\.android.*'
-                includeGroupByRegex 'com\\.google.*'
-                includeGroupByRegex 'androidx.*'
-            }
-        }
+        google()
         mavenCentral()
         gradlePluginPortal()
     }
 }
 
 dependencyResolutionManagement {
-    // 在 Groovy 中，使用等号进行属性赋值，而不是 .set() 方法
     repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
     repositories {
         google()
@@ -24,9 +16,8 @@ dependencyResolutionManagement {
     }
 }
 
-// Project name
-rootProject.name = 'PipePipe'
+rootProject.name = "PipePipe"
 
-// Include only modules that exist inside this repo.
-// If you later add submodules (shared/extractor) into this repo, you can include them here.
-include(":app")
+// Dummy includeBuild so Gradle won't fail if shared/extractor missing real code
+includeBuild("shared")
+includeBuild("extractor")
